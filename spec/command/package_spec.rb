@@ -8,6 +8,7 @@ module Pod
         Dir.glob("NikeKit-*").each { |dir| Pathname.new(dir).rmtree }
         Dir.glob("foo-bar-*").each { |dir| Pathname.new(dir).rmtree }
         Dir.glob("a-*").each { |dir| Pathname.new(dir).rmtree }
+        Dir.glob("Braintree-*").each { |dir| Pathname.new(dir).rmtree }
       end
 
       it 'registers itself' do
@@ -38,7 +39,7 @@ module Pod
 
         lib = Dir.glob("NikeKit-*/ios/NikeKit.framework/NikeKit").first
         symbols = Symbols.symbols_from_library(lib).uniq.sort.reject { |e| e =~ /PodNikeKit/ }
-        symbols.should == %w{ BBUNikePlusActivity BBUNikePlusSessionManager 
+        symbols.should == %w{ BBUNikePlusActivity BBUNikePlusSessionManager
                               BBUNikePlusTag }
       end
 
@@ -50,7 +51,7 @@ module Pod
 
         lib = Dir.glob("a-*/ios/a.framework/a").first
         symbols = Symbols.symbols_from_library(lib).uniq.sort.reject { |e| e =~ /Poda/ }
-        symbols.should == %w{ BBUNikePlusActivity BBUNikePlusSessionManager 
+        symbols.should == %w{ BBUNikePlusActivity BBUNikePlusSessionManager
                                 BBUNikePlusTag }
       end
 
@@ -72,6 +73,18 @@ module Pod
         command.run
 
         true.should == true  # To make the test pass without any shoulds
+      end
+
+      it "includes symbols from embeded libraries" do
+        SourcesManager.stubs(:search).returns(nil)
+
+        command = Command.parse(%w{ package --link-vendored-libraries spec/fixtures/Braintree.podspec})
+        command.run
+
+        lib = Dir.glob("Braintree-*/ios/Braintree.framework/Braintree").first
+        symbols = Symbols.symbols_from_library(lib).uniq.sort.select { |e| e =~ /PayPalMobile/ }
+        puts Symbols.symbols_from_library(lib)
+        symbols.should == []
       end
 
       it "runs with a path to a spec" do
