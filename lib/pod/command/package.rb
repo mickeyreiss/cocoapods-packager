@@ -117,6 +117,7 @@ module Pod
           @source_dir,
           config.sandbox_root,
           sandbox.public_headers.root,
+          sandbox.pod_dir(@spec.name),
           @spec,
           @embedded,
           @mangle)

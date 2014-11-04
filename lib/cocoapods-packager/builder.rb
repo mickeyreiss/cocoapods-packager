@@ -1,9 +1,10 @@
 module Pod
   class Builder
-    def initialize(source_dir, sandbox_root, public_headers_root, spec, embedded, mangle)
+    def initialize(source_dir, sandbox_root, public_headers_root, source_root, spec, embedded, mangle)
       @source_dir = source_dir
       @sandbox_root = sandbox_root
       @public_headers_root = public_headers_root
+      @source_root = source_root
       @spec = spec
       @embedded = embedded
       @mangle = mangle
@@ -47,7 +48,7 @@ module Pod
       end
     end
 
-    :private
+    private
 
     def build_library(platform, defines, output)
       static_libs = static_libs_in_sandbox
@@ -66,11 +67,13 @@ module Pod
       sim_libs = static_libs_in_sandbox('build-sim')
       `libtool -static -o #{@sandbox_root}/build-sim/package.a #{sim_libs.join(' ')}`
 
-      `lipo #{@sandbox_root}/build/package.a #{@sandbox_root}/build-sim/package.a -create -output #{output}`
+      `lipo #{@sandbox_root}/build/package.a #{@sandbox_root}/build-sim/package.a -create -output #{@sandbox_root}/build/package-fat.a`
+
+      `libtool #{@sandbox_root}/build/package-fat.a #{vendored_libs_in_sandbox(:ios).shelljoin} -o #{output}`
     end
 
     def build_static_lib_for_mac(static_libs, output)
-      `libtool -static -o #{output} #{static_libs.join(' ')}`
+      `libtool -static #{static_libs.join(' ')} #{vendored_libs_in_sandbox(:osx).shelljoin} -o #{output}`
     end
 
     def build_with_mangling
@@ -139,6 +142,11 @@ module Pod
       path_specs.map do |path_spec|
         Dir.glob(File.join(@source_dir, path_spec))
       end
+    end
+
+    def vendored_libs_in_sandbox(platform)
+      # TODO: Add support for recursive subspecs. (Pending addition of recursive_default_subspecs to Cocoapods::Core.)
+      [@spec, @spec.default_subspecs].flatten.flat_map { |spec| spec.consumer(platform).vendored_libraries }.map { |lib_path| File.join(@source_root, lib_path) }
     end
 
     def static_libs_in_sandbox(build_dir = 'build')
