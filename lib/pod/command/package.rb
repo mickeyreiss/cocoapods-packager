@@ -11,13 +11,14 @@ module Pod
 
       def self.options
         [
-          ['--force',     'Overwrite existing files.'],
-          ['--no-mangle', 'Do not mangle symbols of depedendant Pods.'],
-          ['--embedded',  'Generate embedded frameworks.'],
-          ['--library',   'Generate static libraries.'],
-          ['--subspecs',  'Only include the given subspecs'],
+          ['--force',                    'Overwrite existing files.'],
+          ['--no-mangle',                'Do not mangle symbols of depedendant Pods.'],
+          ['--embedded',                 'Generate embedded frameworks.'],
+          ['--library',                  'Generate static libraries.'],
+          ['--subspecs',                 'Only include the given subspecs'],
           ['--spec-sources=private,https://github.com/CocoaPods/Specs.git', 'The sources to pull dependant ' \
             'pods from (defaults to https://github.com/CocoaPods/Specs.git)'],
+          ['--link-vendored-libraries',  'Link the spec\'s vendored libraries']
         ]
       end
 
@@ -25,6 +26,7 @@ module Pod
         @embedded = argv.flag?('embedded')
         @force = argv.flag?('force')
         @library = argv.flag?('library')
+        @link_vendored_libraries = argv.flag?('link-vendored-libraries')
         @mangle = argv.flag?('mangle', true)
         @name = argv.shift_argument
         @source = argv.shift_argument
@@ -58,7 +60,7 @@ module Pod
         Dir.chdir(@source_dir)
       end
 
-      :private
+      private
 
       def build_in_sandbox(platform)
         config.sandbox_root       = 'Pods'
@@ -120,7 +122,8 @@ module Pod
           sandbox.pod_dir(@spec.name),
           @spec,
           @embedded,
-          @mangle)
+          @mangle,
+          @link_vendored_libraries)
 
         builder.build(platform, @library)
 

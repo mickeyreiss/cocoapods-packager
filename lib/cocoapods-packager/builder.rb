@@ -1,6 +1,6 @@
 module Pod
   class Builder
-    def initialize(source_dir, sandbox_root, public_headers_root, source_root, spec, embedded, mangle)
+    def initialize(source_dir, sandbox_root, public_headers_root, source_root, spec, embedded, mangle, link_vendored_libraries)
       @source_dir = source_dir
       @sandbox_root = sandbox_root
       @public_headers_root = public_headers_root
@@ -8,6 +8,7 @@ module Pod
       @spec = spec
       @embedded = embedded
       @mangle = mangle
+      @link_vendored_libraries = link_vendored_libraries
     end
 
     def build(platform, library)
@@ -145,7 +146,10 @@ module Pod
     end
 
     def vendored_libs_in_sandbox(platform)
+      return [] unless @link_vendored_libraries
       # TODO: Add support for recursive subspecs. (Pending addition of recursive_default_subspecs to Cocoapods::Core.)
+
+      UI.puts('Linking vendored libraries')
       [@spec, @spec.default_subspecs].flatten.flat_map { |spec| spec.consumer(platform).vendored_libraries }.map { |lib_path| File.join(@source_root, lib_path) }
     end
 
